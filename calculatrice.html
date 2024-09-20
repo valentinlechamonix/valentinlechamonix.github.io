@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculatrice Moderne</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            position: relative;
+        }
+
+        .calculator {
+            width: 320px;
+            padding: 20px;
+            background-color: #333;
+            border-radius: 15px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        #display {
+            width: 100%;
+            height: 60px;
+            background-color: #000;
+            color: #fff;
+            text-align: right;
+            font-size: 2.5em;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .button {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.5em;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            color: #fff;
+            background-color: #888;
+        }
+
+        .button.operation {
+            background-color: orange;
+        }
+
+        .button.double {
+            grid-column: span 2;
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+
+        /* Bouton pour changer la couleur */
+        .color-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background-color: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        /* Icone des paramètres (placée en haut à droite de la page) */
+        .settings-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 30px;
+        }
+
+        /* Fenêtre modale pour les paramètres */
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .settings-modal .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+        }
+
+        .volume-slider {
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        .contact-info {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator" id="calculator">
+        <div id="display">0</div>
+        <div class="buttons">
+            <button class="button" onclick="clearDisplay()">AC</button>
+            <button class="button">%</button>
+            <button class="button">±</button>
+            <button class="button operation" onclick="inputOperation('/')">÷</button>
+
+            <button class="button" onclick="inputNumber(7)">7</button>
+            <button class="button" onclick="inputNumber(8)">8</button>
+            <button class="button" onclick="inputNumber(9)">9</button>
+            <button class="button operation" onclick="inputOperation('*')">×</button>
+
+            <button class="button" onclick="inputNumber(4)">4</button>
+            <button class="button" onclick="inputNumber(5)">5</button>
+            <button class="button" onclick="inputNumber(6)">6</button>
+            <button class="button operation" onclick="inputOperation('-')">−</button>
+
+            <button class="button" onclick="inputNumber(1)">1</button>
+            <button class="button" onclick="inputNumber(2)">2</button>
+            <button class="button" onclick="inputNumber(3)">3</button>
+            <button class="button operation" onclick="inputOperation('+')">+</button>
+
+            <button class="button double" onclick="inputNumber(0)">0</button>
+            <button class="button">.</button>
+            <button class="button operation" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <!-- Bouton pour changer la couleur -->
+    <button class="color-button" onclick="changeColor()">Couleur</button>
+
+    <!-- Paramètres -->
+    <div class="settings-icon" onclick="toggleSettings()">⚙️</div>
+
+    <div class="settings-modal" id="settingsModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="toggleSettings()">✖</span>
+            <h3>Paramètres</h3>
+            <label for="volume">Volume du Bruitage</label>
+            <input type="range" id="volume" class="volume-slider" min="0" max="1" step="0.1" value="0.5" onchange="changeVolume(this.value)">
+            <div class="contact-info">
+                <p>Pour nous contacter:</p>
+                <p>Email: <a href="mailto:calculatrice@calculatrice.fr">calculatrice@calculatrice.fr</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fichier audio pour le clic -->
+    <audio id="clickSound" preload="auto">
+        <source src="https://www.soundjay.com/button/sounds/button-16.mp3" type="audio/mpeg">
+        Votre navigateur ne supporte pas les fichiers audio HTML5.
+    </audio>
+
+    <script>
+        let currentInput = '';
+        let operator = null;
+        let previousInput = '';
+        const display = document.getElementById('display');
+        const clickSound = document.getElementById('clickSound');
+
+        // Chargement du son
+        clickSound.load();
+
+        function clearDisplay() {
+            playSound();
+            currentInput = '';
+            operator = null;
+            previousInput = '';
+            updateDisplay('0');
+        }
+
+        function inputNumber(num) {
+            playSound();
+            if (currentInput === '0') {
+                currentInput = num.toString();
+            } else {
+                currentInput += num.toString();
+            }
+            updateDisplay(currentInput);
+        }
+
+        function inputOperation(op) {
+            playSound();
+            if (currentInput === '') return;
+            operator = op;
+            previousInput = currentInput;
+            currentInput = '';
+        }
+
+        function calculate() {
+            playSound();
+            if (operator === null || currentInput === '') return;
+            const result = eval(`${previousInput} ${operator} ${currentInput}`);
+            updateDisplay(result);
+            currentInput = result.toString();
+            operator = null;
+            previousInput = '';
+        }
+
+        function updateDisplay(value) {
+            display.innerText = value;
+        }
+
+        function changeColor() {
+            const calculator = document.getElementById('calculator');
+            const colors = ['#333', '#ff6347', '#8a2be2', '#2e8b57', '#f5f5f5']; // Noir, Rouge, Violet, Vert, Blanc
+            const currentColor = calculator.style.backgroundColor || '#333';
+            const nextColorIndex = (colors.indexOf(currentColor) + 1) % colors.length;
+            calculator.style.backgroundColor = colors[nextColorIndex];
+        }
+
+        function playSound() {
+            // Rejoue le son à chaque clic
+            clickSound.currentTime = 0;
+            clickSound.play();
+        }
+
+        function changeVolume(volume) {
+            clickSound.volume = volume;
+        }
+
+        function toggleSettings() {
+            const modal = document.getElementById('settingsModal');
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        }
+    </script>
+</body>
+</html>
